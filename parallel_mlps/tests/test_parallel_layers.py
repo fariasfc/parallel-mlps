@@ -12,9 +12,9 @@ from parallel_mlps.parallel_mlp import ParallelMLPs
 
 logger = logging.getLogger()
 
-N_SAMPLES = 5
-N_FEATURES = 3
-N_OUTPUTS = 2
+N_SAMPLES = 50
+N_FEATURES = 30
+N_OUTPUTS = 20
 
 MIN_NEURONS = 1
 MAX_NEURONS = 3
@@ -66,7 +66,7 @@ def parallel_mlp_object(activation_functions, X):
 
 def test_trainings(X, Y, parallel_mlp_object):
     reproducibility()
-    lr = 0.5
+    lr = 0.1
     atol = 1e-5
     rtol = 1e-5
     parallel_optimizer = SGD(params=parallel_mlp_object.parameters(), lr=lr)
@@ -109,7 +109,6 @@ def test_trainings(X, Y, parallel_mlp_object):
             assert torch.allclose(candidate_losses[i], loss, atol=atol, rtol=rtol)
 
             m = parallel_mlp_object.extract_mlps([i])[0]
-            print(i)
 
             np.testing.assert_allclose(
                 m.hidden_layer.weight.detach().cpu().numpy(),

@@ -140,23 +140,14 @@ def build_model_ids(
             i += 1
 
     total_hidden_neurons = len(hidden_neuron__model_id)
-    activations_split = total_hidden_neurons // num_activations
 
     output__model_id = torch.Tensor(
         [i[0] for i in groupby(hidden_neuron__model_id)]
     ).long()
-    output__neuron_structure_id = (
-        output__model_id[: num_activations * num_different_neurons_structures]
-        * repetitions
-    )
 
     repetition_architecture_id = (
         torch.arange(num_different_neurons_structures).repeat(repetitions).long()
     )
-    # # model_ids = np.arange(num_different_neurons_structures)
-    # repetition_architecture_id = np.array([])
-    # for rep in range(repetitions):
-    #     repetition_architecture_id = np.hstack((repetition_architecture_id, model_ids))
 
     output__architecture_id = torch.tensor([])
     increment = max(repetition_architecture_id) + 1
@@ -237,21 +228,13 @@ class ParallelMLPs(nn.Module):
         for i, ix in enumerate(hidden_neuron__model_id):
             self.model_id__hidden_idx[ix.item()].append(i)
 
-        # self.model_id__hidden_idxs = {
-        #     i: torch.where(self.hidden_neuron__model_id)[0]
-        #     for i in self.output__model_id
-        # }
         self.hidden_neuron__model_id = self.hidden_neuron__model_id.to(self.device)
-        # self.output__repetition = (
-        #     torch.Tensor(output__repetition.float()uuuuuuuu).long().to(self.device)
-        # )
 
         self.total_hidden_neurons = len(self.hidden_neuron__model_id)
         self.unique_model_ids = sorted(list(set(hidden_neuron__model_id.tolist())))
         self.model_id__num_hidden_neurons = torch.from_numpy(
             np.bincount(self.hidden_neuron__model_id.cpu().numpy())
         ).to(self.device)
-        # self.model_id__start_neuron = torch.zeros_like(self.model_id__num_hidden_neurons)
         self.model_id__start_idx = torch.cat(
             [
                 torch.tensor([0]).to(self.device),
@@ -261,11 +244,6 @@ class ParallelMLPs(nn.Module):
         self.model_id__end_idx = (
             self.model_id__start_idx + self.model_id__num_hidden_neurons
         )
-        # self.model_id__start_neuron =
-
-        # self.model_id__num_hidden_neurons = torch.bincount(
-        #     self.hidden_neuron__model_id
-        # ).to(self.device)
 
         self.num_unique_models = len(self.unique_model_ids)
         self.num_activations = len(activations)
@@ -383,7 +361,6 @@ class ParallelMLPs(nn.Module):
         rets = []
         with torch.no_grad():
             for model_id in model_ids:
-                # model_neurons = torch.where(self.hidden_neuron__model_id == model_id)[0]
                 model_neurons = self.model_id__hidden_idx[model_id]
                 hidden_weight = self.hidden_layer.weight[model_neurons, :]
                 hidden_bias = self.hidden_layer.bias[model_neurons]
@@ -403,20 +380,8 @@ class ParallelMLPs(nn.Module):
                 }
                 rets.append(ret)
 
-                # mlps.append(
-                #     MLP(
-                #         hidden_layer=hidden_layer,
-                #         out_layer=out_layer,
-                #         activation=activation,
-                #         model_id=model_id,
-                #         metadata={"model_id": model_id},
-                #         device=self.device,
-                #     )
-                # )
-
         return rets
 
-    # @profile
     def extract_mlps(self, model_ids: List[int]) -> List[MLP]:
         """Extracts a completely independent MLP."""
         if max(model_ids) >= self.num_unique_models:
@@ -428,7 +393,6 @@ class ParallelMLPs(nn.Module):
         with torch.no_grad():
             for model_id in model_ids:
                 model_neurons = torch.where(self.hidden_neuron__model_id == model_id)[0]
-                # model_neurons = self.model_id__hidden_idx[model_id]
                 hidden_weight = self.hidden_layer.weight[model_neurons, :]
                 hidden_bias = self.hidden_layer.bias[model_neurons]
 
@@ -464,45 +428,6 @@ class ParallelMLPs(nn.Module):
 
         return mlps
 
-    def get_regularization_term(self, gamma=1e-4, l=2):
-        n_hidden, n_inputs = self.hidden_layer.weight.shape
-        n_models = self.num_unique_models
-
-        if l == 1:
-            hid_w = (self.hidden_layer.weight.abs()).sum(-1)[:, None]
-            hid_b = (self.hidden_layer.bias.abs())[:, None]
-            out_w = (self.weight.abs()).sum(0)[:, None]
-            b_hid_out_reg = (self.bias.abs()).sum(-1)
-        else:
-            hid_w = (self.hidden_layer.weight ** l).sum(-1)[:, None]
-            hid_b = (self.hidden_layer.bias ** l)[:, None]
-            out_w = (self.weight ** l).sum(0)[:, None]
-            b_hid_out_reg = (self.bias ** l).sum(-1)
-
-        w_in_hid_reg = torch.zeros(n_models, 1, device=self.device).scatter_add_(
-            0,
-            self.hidden_neuron__model_id[:, None],
-            hid_w,
-        )
-
-        b_in_hid_reg = torch.zeros(n_models, 1, device=self.device).scatter_add(
-            0,
-            self.hidden_neuron__model_id[:, None],
-            hid_b,
-        )
-
-        w_hid_out_reg = torch.zeros(n_models, 1, device=self.device).scatter_add_(
-            0,
-            self.hidden_neuron__model_id[:, None],
-            out_w,
-        )
-
-        reg = w_in_hid_reg + b_in_hid_reg + w_hid_out_reg + b_hid_out_reg[:, None]
-        reg = reg.flatten() / self.model_id__num_hidden_neurons
-        reg = gamma * reg
-
-        return reg
-
     def get_model_ids_from_architecture_id(self, architecture_id):
         indexes = self.output__architecture_id == architecture_id
         model_ids = self.output__model_id[indexes]
@@ -527,23 +452,6 @@ class ParallelMLPs(nn.Module):
         for model_id in model_ids:
             activations.append(self.activations[self.model_id__activation_id[model_id]])
 
-        if len(activations) == 1:
-            activations = activations[0]
-
-        return activations
-
-    def old_get_activation_from_model_id(self, model_ids):
-        activations = []
-        if isinstance(model_ids, int):
-            model_ids = [model_ids]
-
-        for model_id in model_ids:
-            activation_index = (
-                torch.nonzero(self.hidden_neuron__model_id == model_id)[0]
-                // self.activations_split
-            )
-            activation = deepcopy(self.activations[activation_index])
-            activations.append(activation)
         if len(activations) == 1:
             activations = activations[0]
 
