@@ -4,14 +4,10 @@ parallel-mlps
 
 
 .. image:: https://img.shields.io/pypi/v/parallel_mlps.svg
-        :target: https://pypi.python.org/pypi/parallel_mlps
+        :target: https://pypi.python.org/pypi/parallel-mlps
 
 .. image:: https://img.shields.io/travis/fariasfc/parallel_mlps.svg
-        :target: https://travis-ci.com/fariasfc/parallel_mlps
-
-.. image:: https://readthedocs.org/projects/parallel-mlps/badge/?version=latest
-        :target: https://parallel-mlps.readthedocs.io/en/latest/?version=latest
-        :alt: Documentation Status
+        :target: https://travis-ci.com/fariasfc/parallel-mlps
 
 
 
@@ -20,7 +16,6 @@ Create parallel layers using a singl
 
 
 * Free software: MIT license
-* Documentation: https://parallel-mlps.readthedocs.io.
 
 
 Features
