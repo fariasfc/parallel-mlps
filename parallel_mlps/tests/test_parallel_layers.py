@@ -66,9 +66,9 @@ def parallel_mlp_object(activation_functions, X):
 
 def test_trainings(X, Y, parallel_mlp_object):
     reproducibility()
-    lr = 1
-    atol = 1e-9
-    rtol = 0.99999
+    lr = 0.5
+    atol = 1e-5
+    rtol = 1e-5
     parallel_optimizer = SGD(params=parallel_mlp_object.parameters(), lr=lr)
 
     single_models = [

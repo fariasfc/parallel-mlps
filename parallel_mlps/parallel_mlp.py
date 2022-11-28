@@ -132,12 +132,6 @@ def build_model_ids(
     num_different_neurons_structures = len(neurons_structure)
     num_parallel_mlps = num_different_neurons_structures * num_activations * repetitions
 
-    output__activation = (
-        torch.arange(num_activations)
-        .repeat_interleave(num_parallel_mlps // num_activations)
-        .long()
-    )
-
     i = 0
     hidden_neuron__model_id = []
     while i < num_parallel_mlps:
@@ -186,14 +180,12 @@ def build_model_ids(
 
     assert len(output__architecture_id) == len(output__model_id)
     assert len(output__architecture_id) == len(output__repetition)
-    assert len(output__architecture_id) == len(output__activation)
 
     return (
         hidden_neuron__model_id,
         output__model_id,
         output__architecture_id,
         output__repetition,
-        output__activation,
     )
 
 
@@ -218,7 +210,6 @@ class ParallelMLPs(nn.Module):
             output__model_id,
             output__architecture_id,
             output__repetition,
-            output__activation,
         ) = build_model_ids(
             repetitions=repetitions,
             activation_functions=activations,
